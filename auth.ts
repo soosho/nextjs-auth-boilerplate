@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import { Prisma } from "@prisma/client"
 import type { NextAuthConfig } from "next-auth"
 import { headers } from "next/headers"
 
@@ -68,7 +69,7 @@ export const AuthConfig = {
           const ip = headersList.get("x-forwarded-for") || "unknown"
 
           // Combine findUnique and update into a single transaction
-          const result = await prisma.$transaction(async (tx) => {
+          const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const dbUser = await tx.user.upsert({
               where: { email: user.email! },
               update: {
