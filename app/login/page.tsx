@@ -83,8 +83,8 @@ export default function LoginPage() {
       const { requiresOTP } = await ipCheck.json()
 
       if (requiresOTP) {
-        // Just show the OTP modal, don't send OTP yet
-        setFormState({ email, password }) // Save credentials for later
+        // Save credentials and show OTP modal
+        setFormState({ email, password })
         setShowOTP(true)
         setIsLoading(false)
         return
@@ -216,6 +216,14 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className={formState.error ? "border-red-500" : ""}
                 />
+                <div className="text-sm text-right">
+                  <Link 
+                    href="/forgot-password" 
+                    className="text-primary hover:underline"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -262,6 +270,7 @@ export default function LoginPage() {
       <OTPVerificationModal
         email={formState.email}
         isOpen={showOTP}
+        type="login"
         onVerify={handleOTPVerify}
         onClose={() => {
           setShowOTP(false)

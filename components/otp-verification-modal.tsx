@@ -18,13 +18,15 @@ interface OTPVerificationModalProps {
   isOpen: boolean
   onVerify: (code: string) => Promise<boolean>
   onClose: () => void
+  type?: "login" | "password_reset" | "withdraw" // Add type prop
 }
 
 export function OTPVerificationModal({
   email,
   isOpen,
   onVerify,
-  onClose
+  onClose,
+  type = "login" // Default to login if not specified
 }: OTPVerificationModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
@@ -40,7 +42,7 @@ export function OTPVerificationModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          type: 'login'
+          type // Use the passed type
         })
       })
 

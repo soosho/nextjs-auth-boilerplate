@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { z } from "zod"
+import { randomBytes } from "crypto"
+import { siteConfig } from "@/config/site"
 
 const verifySchema = z.object({
   email: z.string().email(),
@@ -42,8 +44,6 @@ export async function POST(request: Request) {
       }
     })
 
-    console.log("Found OTP:", otp)
-
     if (!otp) {
       // Check why it failed
       const failedOtp = await prisma.oTP.findFirst({
@@ -74,6 +74,25 @@ export async function POST(request: Request) {
       where: { id: otp.id },
       data: { used: true }
     })
+
+    // For password reset, generate a reset token
+    if (type === "password_reset") {
+      const resetToken = randomBytes(32).toString("hex")
+      const tokenExpiry = new Date(Date.now() + siteConfig.verification.tokenExpiry)
+
+      await prisma.user.update({
+        where: { email },
+        data: {
+          verifyToken: resetToken,
+          verifyTokenExpiry: tokenExpiry
+        }
+      })
+
+      return NextResponse.json({ 
+        success: true, 
+        resetToken 
+      })
+    }
 
     // Update user's last login IP if this is a login OTP
     if (type === "login") {
