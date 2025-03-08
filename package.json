@@ -9,9 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@auth/core": "^0.38.0",
     "@hookform/resolvers": "^4.1.3",
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "^5.10.2",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-aspect-ratio": "^1.1.2",
@@ -76,7 +75,7 @@
     "@types/react-dom": "^19.0.4",
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
-    "prisma": "^6.4.1",
+    "prisma": "^5.10.2",
     "tailwindcss": "^4",
     "typescript": "^5.8.2"
   }

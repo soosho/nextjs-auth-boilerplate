@@ -62,64 +62,69 @@ export const AuthConfig = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        try {
+      try {
+        if (account?.provider === "google") {
           const headersList = await headers()
           const ip = headersList.get("x-forwarded-for") || "unknown"
 
-          // Use upsert to ensure we get the database user
-          const dbUser = await prisma.user.upsert({
-            where: { email: user.email! },
-            update: {
-              lastLoginIp: ip,
-              emailVerified: true
-            },
-            create: {
-              email: user.email!,
-              firstName: profile?.given_name || "",
-              lastName: profile?.family_name || "",
-              emailVerified: true,
-              password: "",
-              registrationIp: ip,
-              lastLoginIp: ip
-            }
-          })
-
-          // Override the user object with database user
-          user.id = dbUser.id
-          user.firstName = dbUser.firstName
-          user.lastName = dbUser.lastName
-
-          // Link Google account if not exists
-          const existingAccount = await prisma.account.findFirst({
-            where: {
-              userId: dbUser.id,
-              provider: "google"
-            }
-          })
-
-          if (!existingAccount) {
-            await prisma.account.create({
-              data: {
-                userId: dbUser.id,
-                type: account.type,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                access_token: account.access_token,
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                id_token: account.id_token,
-                session_state: String(account.session_state)
+          // Combine findUnique and update into a single transaction
+          const result = await prisma.$transaction(async (tx) => {
+            const dbUser = await tx.user.upsert({
+              where: { email: user.email! },
+              update: {
+                lastLoginIp: ip,
+                emailVerified: true
+              },
+              create: {
+                email: user.email!,
+                firstName: profile?.given_name || "",
+                lastName: profile?.family_name || "",
+                emailVerified: true,
+                password: "",
+                registrationIp: ip,
+                lastLoginIp: ip
               }
             })
-          }
-        } catch (error) {
-          console.error("Google sign in error:", error)
-          return false
+
+            // Check and create account in same transaction
+            const existingAccount = await tx.account.findFirst({
+              where: {
+                userId: dbUser.id,
+                provider: "google"
+              }
+            })
+
+            if (!existingAccount) {
+              await tx.account.create({
+                data: {
+                  userId: dbUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: String(account.session_state)
+                }
+              })
+            }
+
+            return dbUser
+          })
+
+          // Update user object with database values
+          user.id = result.id
+          user.firstName = result.firstName
+          user.lastName = result.lastName
         }
+
+        return true
+      } catch (error) {
+        console.error('Database error:', error)
+        return false
       }
-      return true
     },
     async jwt({ token, user, trigger }) {
       if (trigger === "signIn" && user) {

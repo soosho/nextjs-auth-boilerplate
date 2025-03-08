@@ -229,7 +229,7 @@ export default function RegisterPage() {
             variant="outline"
             className="w-full mb-6"
             disabled={isLoading}
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => signIn("google", { callbackUrl: "/overview" })}
           >
             <FaGoogle className="mr-2 h-4 w-4" />
             Sign up with Google

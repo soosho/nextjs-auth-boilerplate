@@ -123,7 +123,7 @@ export default function LoginPage() {
       toast.success("Login successful", {
         description: "Redirecting to dashboard..."
       })
-      router.replace("/dashboard")
+      router.replace("/overview")
     } catch (error) {
       console.error("Login error:", error)
       toast.error("An error occurred", {
@@ -151,12 +151,12 @@ export default function LoginPage() {
           email: formState.email,
           password: formState.password,
           redirect: false,
-          callbackUrl: "/dashboard" // Add this
+          callbackUrl: "/overview" // Add this
         })
 
         if (result?.ok) {
           toast.success("Login successful")
-          router.replace("/dashboard")
+          router.replace("/overview")
           return true
         }
       }
@@ -274,7 +274,7 @@ export default function LoginPage() {
               variant="outline"
               className="w-full"
               disabled={isLoading}
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+              onClick={() => signIn("google", { callbackUrl: "/overview" })}
             >
               <FaGoogle className="mr-2 h-4 w-4" />
               Continue with Google

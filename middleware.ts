@@ -21,7 +21,7 @@ export default authMiddleware((request) => {
 
   // Redirect logged in users away from auth pages
   if (isLoggedIn && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard', nextUrl))
+    return NextResponse.redirect(new URL('/overview', nextUrl))
   }
 
   // Redirect non-logged in users from protected routes
