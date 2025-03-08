@@ -1,5 +1,4 @@
 import { auth, signOut } from "@/auth"
-import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -10,10 +9,11 @@ import {
 
 export default async function DashboardPage() {
   const session = await auth()
-  
-  if (!session) {
-    redirect("/login")
-  }
+  const { user } = session!
+
+  const userName = user.firstName && user.lastName
+    ? `${user.firstName} ${user.lastName}`
+    : user.email
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,10 +24,12 @@ export default async function DashboardPage() {
               <h1 className="text-xl font-semibold">Dashboard</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span>Welcome, {session.user?.name}</span>
+              <span>Welcome, {userName}</span>
               <form action={async () => {
                 'use server'
-                await signOut()
+                await signOut({
+                  redirectTo: "/login"
+                })
               }}>
                 <Button variant="destructive" type="submit">
                   Sign Out
@@ -48,6 +50,14 @@ export default async function DashboardPage() {
               <p className="text-muted-foreground">
                 You are now signed in to your account.
               </p>
+              <div className="space-y-2 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Logged in as: {user.email}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  User ID: {user.id}
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { CheckCircle, Loader2 } from "lucide-react"
 import { Geetest, GeetestValidateResult } from "@/components/geetest"
 import { Separator } from "@/components/ui/separator"
+import { signIn } from "next-auth/react"
+import { FaGoogle } from "react-icons/fa"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -217,6 +219,26 @@ export default function RegisterPage() {
             <Separator />
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="bg-background px-2 text-muted-foreground text-sm">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full mb-6"
+            disabled={isLoading}
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+          >
+            <FaGoogle className="mr-2 h-4 w-4" />
+            Sign up with Google
+          </Button>
+
+          <div className="relative">
+            <Separator />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-background px-2 text-muted-foreground text-sm">
                 Already have an account?
               </span>
             </div>
@@ -224,7 +246,7 @@ export default function RegisterPage() {
 
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full mt-6"
             onClick={() => router.push('/login')}
           >
             Sign in

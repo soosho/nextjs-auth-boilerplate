@@ -22,7 +22,10 @@ export async function POST(request: Request) {
     const user = await prisma.user.findUnique({
       where: { email: result.data.email },
       select: {
-        lastLoginIp: true
+        lastLoginIp: true,
+        accounts: {
+          where: { provider: "google" }
+        }
       }
     })
 
@@ -30,6 +33,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ requiresOTP: false })
     }
 
+    // If user has Google account linked, don't require OTP
+    if (user.accounts.length > 0) {
+      return NextResponse.json({ requiresOTP: false })
+    }
+
+    // For email login, check IP
     const requiresOTP = !user.lastLoginIp || user.lastLoginIp !== ip
 
     return NextResponse.json({ requiresOTP })

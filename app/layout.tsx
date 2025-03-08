@@ -4,7 +4,6 @@ import { SessionProvider } from "next-auth/react";
 import { auth } from "../auth";
 import "./globals.css";
 import { GeetestInit } from "@/components/geetest-init";
-import { Toast } from "@/components/ui/toast";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider"
 
@@ -43,8 +42,8 @@ export default async function RootLayout({
         >
           <GeetestInit />
           <SessionProvider session={session}>{children}</SessionProvider>
-          <Toast />
           <Toaster richColors />
+          <SessionProvider>{children}</SessionProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle, Loader2 } from "lucide-react"
 import { Geetest, GeetestValidateResult } from "@/components/geetest"
 import { OTPVerificationModal } from "@/components/otp-verification-modal"
+import { FaGoogle } from "react-icons/fa"
 
 interface FormState {
   email: string
@@ -149,10 +150,11 @@ export default function LoginPage() {
         const result = await signIn("credentials", {
           email: formState.email,
           password: formState.password,
-          redirect: false
+          redirect: false,
+          callbackUrl: "/dashboard" // Add this
         })
 
-        if (!result?.error) {
+        if (result?.ok) {
           toast.success("Login successful")
           router.replace("/dashboard")
           return true
@@ -255,6 +257,28 @@ export default function LoginPage() {
                 {isLoading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={isLoading}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            >
+              <FaGoogle className="mr-2 h-4 w-4" />
+              Continue with Google
+            </Button>
 
             <div className="text-center text-sm">
               <Link 
