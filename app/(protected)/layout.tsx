@@ -1,16 +1,11 @@
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import type { Metadata } from "next"
+import { ProtectedLayout } from "@/components/(protected)/layout"
 
-export default async function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const session = await auth()
+export const metadata: Metadata = {
+  title: "App Dashboard",
+  description: "Manage your account and settings",
+}
 
-  if (!session?.user) {
-    redirect("/login")
-  }
-
-  return <>{children}</>
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <ProtectedLayout>{children}</ProtectedLayout>
 }

@@ -29,7 +29,7 @@ export const AuthConfig = {
               password: true,
               firstName: true,
               lastName: true,
-              emailVerified: true
+              emailVerified: true,
             }
           })
 
@@ -128,6 +128,7 @@ export const AuthConfig = {
       }
     },
     async jwt({ token, user, trigger, account }) {
+      
       if (trigger === "signIn" && user) {
         // Use the database user ID and data
         token.id = user.id
@@ -135,21 +136,25 @@ export const AuthConfig = {
         token.firstName = user.firstName
         token.lastName = user.lastName
       }
+      
       if (account?.provider === "google") {
         // Set loginType to google in token
         token.loginType = "google";
       }
+      
       return token
     },
     async session({ session, token }) {
+      
       if (session.user) {
         // Ensure we're using the database user data
         session.user.id = token.id as string
         session.user.email = token.email as string
         session.user.firstName = token.firstName as string
         session.user.lastName = token.lastName as string
-        session.user.loginType = token.loginType as string; // Add loginType to session.user
+        session.user.loginType = token.loginType as string
       }
+      
       return session
     }
   },

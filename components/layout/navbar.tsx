@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -73,7 +72,6 @@ export function Navbar() {
         </div>
         
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-4">
-          <ThemeToggle />
           
           {session ? (
             <div className="flex gap-2">

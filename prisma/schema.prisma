@@ -13,6 +13,7 @@ model User {
   lastName          String
   email             String    @unique
   password          String
+  avatar            String?   // Added avatar field, nullable
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   emailVerified     Boolean   @default(false)
@@ -51,6 +52,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+  avatar            String? // Added avatar field for provider avatars
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
