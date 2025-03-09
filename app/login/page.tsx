@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Loader2 } from "lucide-react"
+import { CheckCircle, Loader2, Eye, EyeOff } from "lucide-react" // Added Eye and EyeOff
 import { Geetest, GeetestValidateResult } from "@/components/geetest"
 import { OTPVerificationModal } from "@/components/otp-verification-modal"
 import { FaGoogle } from "react-icons/fa"
@@ -29,6 +29,12 @@ export default function LoginPage() {
   })
   const [captchaData, setCaptchaData] = useState<GeetestValidateResult | null>(null)
   const [showOTP, setShowOTP] = useState(false)
+  const [showPassword, setShowPassword] = useState(false) // Add password visibility toggle state
+
+  // Function to toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev)
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -218,16 +224,30 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  name="password"
-                  value={formState.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  className={formState.error ? "border-red-500" : ""}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formState.password}
+                    onChange={handleChange}
+                    required
+                    disabled={isLoading}
+                    className={`${formState.error ? "border-red-500" : ""} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    tabIndex={-1} // Prevent tab focus for better accessibility
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <div className="text-sm text-right">
                   <Link 
                     href="/forgot-password" 

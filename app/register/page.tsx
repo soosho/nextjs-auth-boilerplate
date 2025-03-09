@@ -1,17 +1,18 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Loader2 } from "lucide-react"
+import { CheckCircle, Loader2, XCircle, Eye, EyeOff } from "lucide-react" // Added Eye and EyeOff
 import { Geetest, GeetestValidateResult } from "@/components/geetest"
 import { Separator } from "@/components/ui/separator"
 import { signIn } from "next-auth/react"
 import { FaGoogle } from "react-icons/fa"
+import zxcvbn from 'zxcvbn'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -19,10 +20,89 @@ export default function RegisterPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [userEmail, setUserEmail] = useState("")
   const [captchaData, setCaptchaData] = useState<GeetestValidateResult | null>(null)
+  
+  // Password validation states
+  const [password, setPassword] = useState("")
+  const [passwordStrength, setPasswordStrength] = useState(0)
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    minLength: false,
+    hasSymbol: false,
+    hasNumber: false
+  })
+  
+  // Email validation state
+  const [email, setEmail] = useState("")
+  const [isValidEmail, setIsValidEmail] = useState(true)
+
+  // Check if component is mounted (client-side)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Add state for password visibility
+  const [showPassword, setShowPassword] = useState(false)
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value
+    setPassword(newPassword)
+    
+    // Calculate password strength
+    const result = zxcvbn(newPassword)
+    setPasswordStrength(result.score)
+    
+    // Check each password requirement
+    setPasswordRequirements({
+      minLength: newPassword.length >= 8,
+      hasSymbol: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
+      hasNumber: /[0-9]/.test(newPassword)
+    })
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEmail(value)
+    
+    // Only validate if there's actual content
+    if (value && !value.endsWith("@gmail.com")) {
+      setIsValidEmail(false)
+    } else {
+      setIsValidEmail(true)
+    }
+  }
+
+  const handleEmailBlur = () => {
+    if (email && !email.endsWith("@gmail.com")) {
+      toast.error("Only Gmail addresses are allowed")
+      setIsValidEmail(false)
+    }
+  }
+
+  // Function to toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev)
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsLoading(true)
+
+    // Check email validity
+    if (email && !email.endsWith("@gmail.com")) {
+      toast.error("Only Gmail addresses are allowed")
+      setIsLoading(false)
+      return
+    }
+
+    // Check password requirements
+    if (!passwordRequirements.minLength || !passwordRequirements.hasSymbol || !passwordRequirements.hasNumber) {
+      toast.error("Password does not meet requirements", {
+        description: "Please ensure your password has at least 8 characters, 1 symbol, and 1 number"
+      })
+      setIsLoading(false)
+      return
+    }
 
     if (!captchaData) {
       toast.error("Verification required", {
@@ -33,7 +113,7 @@ export default function RegisterPage() {
     }
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
+    const submittedEmail = formData.get("email") as string // Renamed from 'email' to 'submittedEmail'
     
     try {
       const response = await fetch('/api/register', {
@@ -42,7 +122,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           firstName: formData.get("firstName"),
           lastName: formData.get("lastName"),
-          email,
+          email: submittedEmail, // Updated reference
           password: formData.get("password"),
           captcha: captchaData
         }),
@@ -50,7 +130,7 @@ export default function RegisterPage() {
 
       if (response.ok) {
         setIsSuccess(true)
-        setUserEmail(email)
+        setUserEmail(submittedEmail) // Updated reference
       } else {
         const data = await response.json()
         if (data.details) {
@@ -134,7 +214,7 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First name</Label>
@@ -166,19 +246,88 @@ export default function RegisterPage() {
                 name="email"
                 type="email"
                 required
-                placeholder="john@example.com"
+                placeholder="john@gmail.com"
                 disabled={isLoading}
+                onChange={handleEmailChange}
+                onBlur={handleEmailBlur}
+                value={email}
+                className={!isValidEmail ? "border-red-500" : ""}
               />
+              {!isValidEmail && (
+                <p className="text-red-500 text-xs mt-1">Only Gmail addresses are allowed</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  disabled={isLoading}
+                  onChange={handlePasswordChange}
+                  value={password}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
+                  autoComplete="new-password"
+                  className="pr-10" // Add padding for the eye icon
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                  tabIndex={-1} // Prevent tab focus for better accessibility
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+                
+                {mounted && isPasswordFocused && (
+                  <div className="absolute left-full ml-3 top-0 bg-white dark:bg-gray-800 p-3 rounded-md border shadow-md w-72 z-10">
+                    <h4 className="text-sm font-medium mb-2">Password requirements:</h4>
+                    <ul className="space-y-1">
+                      <li className="flex items-center space-x-2">
+                        {passwordRequirements.minLength ? 
+                          <CheckCircle className="h-4 w-4 text-green-500" /> :
+                          <XCircle className="h-4 w-4 text-red-500" />}
+                        <span className={`text-xs ${passwordRequirements.minLength ? "text-green-600" : "text-red-500"}`}>
+                          At least 8 characters
+                        </span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        {passwordRequirements.hasSymbol ? 
+                          <CheckCircle className="h-4 w-4 text-green-500" /> :
+                          <XCircle className="h-4 w-4 text-red-500" />}
+                        <span className={`text-xs ${passwordRequirements.hasSymbol ? "text-green-600" : "text-red-500"}`}>
+                          At least 1 symbol (!@#$%^&*...)
+                        </span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        {passwordRequirements.hasNumber ? 
+                          <CheckCircle className="h-4 w-4 text-green-500" /> :
+                          <XCircle className="h-4 w-4 text-red-500" />}
+                        <span className={`text-xs ${passwordRequirements.hasNumber ? "text-green-600" : "text-red-500"}`}>
+                          At least 1 number
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full mt-2">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${passwordStrength * 25}%`,
+                    backgroundColor: passwordStrength < 2 ? '#ef4444' : 
+                                    passwordStrength < 4 ? '#f59e0b' : '#22c55e' 
+                  }}
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -208,7 +357,10 @@ export default function RegisterPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || !captchaData}
+              disabled={isLoading || !captchaData || !isValidEmail || 
+                       !(passwordRequirements.minLength && 
+                         passwordRequirements.hasSymbol && 
+                         passwordRequirements.hasNumber)}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? "Creating account..." : "Create account"}

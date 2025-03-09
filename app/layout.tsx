@@ -43,7 +43,6 @@ export default async function RootLayout({
           <GeetestInit />
           <SessionProvider session={session}>{children}</SessionProvider>
           <Toaster richColors />
-          <SessionProvider>{children}</SessionProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -9,8 +9,17 @@ import { z } from 'zod'
 const registerSchema = z.object({
   firstName: z.string().min(2, "First name is too short"),
   lastName: z.string().min(2, "Last name is too short"),
-  email: z.string().email("Invalid email format"),
-  password: z.string().min(8, "Password must be at least 8 characters")
+  email: z.string().email("Invalid email format").refine(email => email.endsWith("@gmail.com"), {
+    message: "Only Gmail addresses are allowed"
+  }),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .refine(password => /[!@#$%^&*(),.?":{}|<>]/.test(password), {
+      message: "Password must contain at least one symbol"
+    })
+    .refine(password => /[0-9]/.test(password), {
+      message: "Password must contain at least one number"
+    })
 })
 
 async function verifyGeetest(captcha: {
