@@ -127,13 +127,17 @@ export const AuthConfig = {
         return false
       }
     },
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, account }) {
       if (trigger === "signIn" && user) {
         // Use the database user ID and data
         token.id = user.id
         token.email = user.email
         token.firstName = user.firstName
         token.lastName = user.lastName
+      }
+      if (account?.provider === "google") {
+        // Set loginType to google in token
+        token.loginType = "google";
       }
       return token
     },
@@ -144,6 +148,7 @@ export const AuthConfig = {
         session.user.email = token.email as string
         session.user.firstName = token.firstName as string
         session.user.lastName = token.lastName as string
+        session.user.loginType = token.loginType as string; // Add loginType to session.user
       }
       return session
     }

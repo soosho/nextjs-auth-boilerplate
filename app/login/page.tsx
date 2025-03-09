@@ -74,6 +74,9 @@ export default function LoginPage() {
         return
       }
 
+      // Determine loginType based on password presence
+      const loginType = password ? "credentials" : "google"; // Or some other default
+
       // Check IP and OTP requirements
       const checkIpResponse = await fetch("/api/auth/check-ip", {
         method: "POST",
@@ -82,7 +85,7 @@ export default function LoginPage() {
         },
         body: JSON.stringify({
           email: formState.email,
-          loginType: "credentials" // Add loginType
+          loginType: loginType // Pass loginType dynamically
         })
       })
 
@@ -254,8 +257,6 @@ export default function LoginPage() {
                   />
                 )}
               </div>
-
-              <input type="hidden" name="loginType" value="credentials" />
 
               <Button 
                 type="submit" 
