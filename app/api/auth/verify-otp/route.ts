@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 import { z } from "zod"
 import { randomBytes } from "crypto"
 import { siteConfig } from "@/config/site"
+import { rateLimit, clearRateLimit } from '@/lib/rate-limit'; // Assuming you create a rate-limit.ts file in your lib directory
 
 const verifySchema = z.object({
   email: z.string().email(),
@@ -23,13 +24,18 @@ export async function POST(request: Request) {
     const { email, code, type } = result.data
     const headersList = await headers()
     const ip = headersList.get("x-forwarded-for") || "unknown"
+    const identifier = ip ?? '127.0.0.1';
 
-    // Debug log the input
-    console.log("Verifying OTP:", { email, code, type })
+    const { success } = await rateLimit(identifier, email); // Use combined IP and email
 
-    // Find latest valid OTP with debug logging
+    if (!success) {
+      return new NextResponse(JSON.stringify({ error: 'Too many requests' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const now = new Date()
-    console.log("Current time:", now)
 
     const otp = await prisma.oTP.findFirst({
       where: {
@@ -45,7 +51,6 @@ export async function POST(request: Request) {
     })
 
     if (!otp) {
-      // Check why it failed
       const failedOtp = await prisma.oTP.findFirst({
         where: {
           email,
@@ -57,25 +62,17 @@ export async function POST(request: Request) {
         }
       })
 
-      console.log("Failed OTP check:", {
-        foundExpired: failedOtp,
-        isUsed: failedOtp?.used,
-        isExpired: failedOtp?.expiresAt ? failedOtp.expiresAt < now : null
-      })
-
       return NextResponse.json({ 
         error: "Invalid or expired code",
         debug: { email, code, type }
       }, { status: 400 })
     }
 
-    // Mark OTP as used
     await prisma.oTP.update({
       where: { id: otp.id },
       data: { used: true }
     })
 
-    // For password reset, generate a reset token
     if (type === "password_reset") {
       const resetToken = randomBytes(32).toString("hex")
       const tokenExpiry = new Date(Date.now() + siteConfig.verification.tokenExpiry)
@@ -88,18 +85,21 @@ export async function POST(request: Request) {
         }
       })
 
+      clearRateLimit(identifier, email); // Clear rate limit after successful password reset
+
       return NextResponse.json({ 
         success: true, 
         resetToken 
       })
     }
 
-    // Update user's last login IP if this is a login OTP
     if (type === "login") {
       await prisma.user.update({
         where: { email },
         data: { lastLoginIp: ip }
       })
+
+      clearRateLimit(identifier, email); // Clear rate limit after successful login
     }
 
     return NextResponse.json({ success: true })

@@ -74,14 +74,19 @@ export default function LoginPage() {
         return
       }
 
-      // First verify credentials without signing in
-      const ipCheck = await fetch('/api/auth/check-ip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+      // Check IP and OTP requirements
+      const checkIpResponse = await fetch("/api/auth/check-ip", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: formState.email,
+          loginType: "credentials" // Add loginType
+        })
       })
 
-      const { requiresOTP } = await ipCheck.json()
+      const { requiresOTP } = await checkIpResponse.json()
 
       if (requiresOTP) {
         // Save credentials and show OTP modal
@@ -129,6 +134,8 @@ export default function LoginPage() {
       toast.error("An error occurred", {
         description: "Please try again later"
       })
+      setIsLoading(false)
+    } finally {
       setIsLoading(false)
     }
   }
@@ -247,6 +254,8 @@ export default function LoginPage() {
                   />
                 )}
               </div>
+
+              <input type="hidden" name="loginType" value="credentials" />
 
               <Button 
                 type="submit" 
