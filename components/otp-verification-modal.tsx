@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useState, useEffect } from "react" // Added useEffect
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,12 +13,15 @@ import {
 } from "@/components/ui/dialog"
 import { Loader2 } from "lucide-react"
 
+// Cooldown period in seconds
+const RESEND_COOLDOWN = 120; // 1 minute cooldown
+
 interface OTPVerificationModalProps {
   email: string
   isOpen: boolean
   onVerify: (code: string) => Promise<boolean>
   onClose: () => void
-  type?: "login" | "password_reset" | "withdraw" // Add type prop
+  type?: "login" | "password_reset" | "withdraw"
 }
 
 export function OTPVerificationModal({
@@ -26,39 +29,91 @@ export function OTPVerificationModal({
   isOpen,
   onVerify,
   onClose,
-  type = "login" // Default to login if not specified
+  type = "login"
 }: OTPVerificationModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [code, setCode] = useState(["", "", "", "", "", ""])
   const [codeSent, setCodeSent] = useState(false)
   const inputs = Array(6).fill(0)
+  
+  // Rate limiting states
+  const [cooldownActive, setCooldownActive] = useState(false)
+  const [cooldownRemaining, setCooldownRemaining] = useState(0)
+  
+  // Effect to handle the countdown timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    
+    if (cooldownActive && cooldownRemaining > 0) {
+      timer = setInterval(() => {
+        setCooldownRemaining((prev) => {
+          if (prev <= 1) {
+            setCooldownActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [cooldownActive, cooldownRemaining]);
 
   const handleSendOTP = async () => {
-    setIsSending(true)
+    // Don't allow sending if cooldown is active
+    if (cooldownActive) return;
+    
+    setIsSending(true);
     try {
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          type // Use the passed type
+          type
         })
-      })
+      });
 
       if (response.ok) {
-        toast.success("Verification code sent")
-        setCodeSent(true)
+        toast.success("Verification code sent");
+        setCodeSent(true);
+        
+        // Start cooldown after successful send
+        setCooldownActive(true);
+        setCooldownRemaining(RESEND_COOLDOWN);
+        
+        // Store the timestamp in localStorage to persist across refreshes
+        localStorage.setItem(`otp_last_sent_${email}`, Date.now().toString());
       } else {
-        const data = await response.json()
-        toast.error(data.error || "Failed to send verification code")
+        const data = await response.json();
+        toast.error(data.error || "Failed to send verification code");
       }
     } catch {
-      toast.error("Failed to send verification code")
+      toast.error("Failed to send verification code");
     } finally {
-      setIsSending(false)
+      setIsSending(false);
     }
-  }
+  };
+
+  // Check for existing cooldown when component mounts
+  useEffect(() => {
+    if (isOpen) {
+      const lastSentTimestamp = localStorage.getItem(`otp_last_sent_${email}`);
+      
+      if (lastSentTimestamp) {
+        const elapsed = Math.floor((Date.now() - parseInt(lastSentTimestamp)) / 1000);
+        const remaining = RESEND_COOLDOWN - elapsed;
+        
+        if (remaining > 0) {
+          setCooldownActive(true);
+          setCooldownRemaining(remaining);
+        }
+      }
+    }
+  }, [isOpen, email]);
 
   const handleInputChange = (index: number, value: string) => {
     if (value.length > 1) return // Prevent pasting multiple numbers
@@ -111,6 +166,13 @@ export function OTPVerificationModal({
     }
   }
 
+  // Format the remaining time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -127,7 +189,7 @@ export function OTPVerificationModal({
             <Button
               type="button"
               onClick={handleSendOTP}
-              disabled={isSending}
+              disabled={isSending || cooldownActive}
               className="w-full"
             >
               {isSending ? (
@@ -135,6 +197,8 @@ export function OTPVerificationModal({
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sending...
                 </>
+              ) : cooldownActive ? (
+                `Resend available in ${formatTime(cooldownRemaining)}`
               ) : (
                 "Send Verification Code"
               )}
@@ -164,9 +228,13 @@ export function OTPVerificationModal({
                   type="button"
                   variant="outline"
                   onClick={handleSendOTP}
-                  disabled={isSending || isLoading}
+                  disabled={isSending || isLoading || cooldownActive}
                 >
-                  Resend Code
+                  {cooldownActive ? (
+                    `Resend in ${formatTime(cooldownRemaining)}`
+                  ) : (
+                    "Resend Code"
+                  )}
                 </Button>
                 <Button
                   type="submit"
