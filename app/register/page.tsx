@@ -116,7 +116,7 @@ export default function RegisterPage() {
     const submittedEmail = formData.get("email") as string // Renamed from 'email' to 'submittedEmail'
     
     try {
-      const response = await fetch('/api/register', {
+      const response = await fetch('/api/system/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

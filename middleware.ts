@@ -4,7 +4,41 @@ import { NextResponse } from "next/server"
 
 const { auth: authMiddleware } = NextAuth(AuthConfig)
 
-export default authMiddleware((request) => {
+// Get the hostname from NEXTAUTH_URL
+let authUrlHostname = null
+try {
+  if (process.env.NEXTAUTH_URL) {
+    authUrlHostname = new URL(process.env.NEXTAUTH_URL).hostname
+  }
+} catch (e) {
+  console.warn("Failed to parse NEXTAUTH_URL", e)
+}
+
+// List of allowed hostnames for system API access
+const ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+// Add the NEXTAUTH_URL hostname if it exists and isn't already in the list
+if (authUrlHostname && !ALLOWED_HOSTS.includes(authUrlHostname)) {
+  ALLOWED_HOSTS.push(authUrlHostname)
+}
+
+export default authMiddleware(async (request) => {
+  // Protect /api/system routes with origin check
+  if (request.nextUrl.pathname.startsWith('/api/system')) {
+    // Get request origin information
+    const host = request.headers.get('host') || ''
+    const hostname = host.split(':')[0] // Remove port if present
+    
+    // Check if request is from allowed hosts
+    if (!ALLOWED_HOSTS.includes(hostname)) {
+      console.warn(`Unauthorized system API access attempt from: ${hostname}, allowed: ${ALLOWED_HOSTS.join(', ')}`)
+      return new NextResponse(
+        JSON.stringify({ error: "System API only available from allowed hosts" }),
+        { status: 403, headers: { 'content-type': 'application/json' } }
+      )
+    }
+  }
+
   // Skip middleware for non-page routes
   if (request.nextUrl.pathname.match(/\.(js|css|png|jpg|svg|ico)$/)) {
     return NextResponse.next()
@@ -32,11 +66,12 @@ export default authMiddleware((request) => {
   return NextResponse.next()
 })
 
-export const routeMatcher = {
+// Combine your matchers
+export const config = {
   matcher: [
-    // Only match specific routes we care about
     '/(protected)/:path*',
     '/login',
-    '/register'
+    '/register',
+    '/api/system/:path*'
   ]
 }

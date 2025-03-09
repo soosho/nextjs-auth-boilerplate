@@ -27,7 +27,7 @@ export default function ResendVerificationPage() {
   useEffect(() => {
     async function checkLimit() {
       try {
-        const response = await fetch('/api/check-resend-limit', {
+        const response = await fetch('/api/system/check-resend-limit', {
           method: 'POST'
         })
         
@@ -61,7 +61,7 @@ export default function ResendVerificationPage() {
     }
 
     try {
-      const response = await fetch('/api/resend-verification', {
+      const response = await fetch('/api/system/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

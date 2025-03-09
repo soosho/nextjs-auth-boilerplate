@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
 
     try {
       // Only validate captcha and show modal
-      const captchaResponse = await fetch('/api/validate-captcha', {
+      const captchaResponse = await fetch('/api/system/validate-captcha', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ captcha: captchaData })

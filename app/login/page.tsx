@@ -56,7 +56,7 @@ export default function LoginPage() {
       }
 
       // Check if email is verified first
-      const verifyCheck = await fetch('/api/check-verification', {
+      const verifyCheck = await fetch('/api/system/check-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
