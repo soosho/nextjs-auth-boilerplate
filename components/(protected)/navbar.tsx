@@ -25,6 +25,7 @@ import {
   X,
   Loader2,
 } from "lucide-react"
+import { siteConfig } from "@/config/site"
 
 interface NavbarProps {
   toggleSidebar: () => void
@@ -89,9 +90,13 @@ export function Navbar({ toggleSidebar, isSidebarOpen }: NavbarProps) {
           
           <Link href="/overview" className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center">
-              <span className="font-semibold text-sm text-primary-foreground">A</span>
+              <span className="font-semibold text-sm text-primary-foreground">
+                {siteConfig.name.charAt(0)}
+              </span>
             </div>
-            <span className="font-semibold text-lg">App</span>
+            <span className="font-semibold text-lg bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              {siteConfig.name}
+            </span>
           </Link>
         </div>
 

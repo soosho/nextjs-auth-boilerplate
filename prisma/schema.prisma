@@ -23,6 +23,7 @@ model User {
   lastLoginIp       String?
   accounts          Account[]
   sessions          Session[]
+  wallets           Wallet[]  // Reverse relation
 }
 
 model OTP {
@@ -64,4 +65,103 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Currency {
+  id                    Int                @id @default(autoincrement())
+  name                  String             @db.VarChar(255)
+  symbol                String             @unique
+  price                 Decimal            @db.Decimal(32, 16)
+  type                  String             @db.VarChar(255)
+  blockchain            Blockchain?        @relation(fields: [blockchainId], references: [id])
+  blockchainId          Int?
+  networks              NetworkOnCurrencies[]
+  price_api             String?            @db.VarChar(255)
+  decimal               Int                @default(8)
+  deposit_fee           Decimal            @default(0.0000000000000000) @db.Decimal(32, 16)
+  min_deposit_amount    Decimal            @default(0.0000000000000000) @db.Decimal(32, 16)
+  min_collection_amount Decimal            @default(0.0000000000000000) @db.Decimal(32, 16)
+  min_withdraw_amount   Decimal            @default(0.0000000000000000) @db.Decimal(32, 16)
+  withdraw_limit_24h    Decimal            @default(0.0000000000000000) @db.Decimal(32, 16)
+  withdraw_limit_72h    Decimal            @default(0.0000000000000000) @db.Decimal(32, 16)
+  website               String?            @db.VarChar(255)
+  explorer              String?            @db.VarChar(255)
+  bitcointalk           String?            @db.VarChar(255)
+  twitter               String?            @db.VarChar(255)
+  discord               String?            @db.VarChar(255)
+  telegram              String?            @db.VarChar(255)
+  status                String             @default("active") @db.VarChar(255)
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @updatedAt
+  wallets               Wallet[]
+
+  @@index([blockchainId])
+  @@map("currencies")
+}
+
+model Blockchain {
+  id                   Int       @id @default(autoincrement())
+  name                 String    @unique @db.VarChar(255)
+  height               BigInt
+  explorer_address     String?   @db.VarChar(255)
+  explorer_transaction String?   @db.VarChar(255)
+  min_confirmations    Int       @default(6)
+  // Added connection details
+  host                 String?   @db.VarChar(255)
+  port                 Int?
+  username             String?   @db.VarChar(255)
+  password             String?   @db.VarChar(255)
+  status               String    @default("active") @db.VarChar(255)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+  networks             Network[]
+  currencies           Currency[] // Add reverse relation
+
+  @@map("blockchains")
+}
+
+model Network {
+  id            Int                    @id @default(autoincrement())
+  name          String                 @db.VarChar(255)
+  shortname     String                 @db.VarChar(255)
+  blockchain    Blockchain             @relation(fields: [blockchainId], references: [id])
+  blockchainId  Int
+  currencies    NetworkOnCurrencies[]
+  created_at    DateTime               @default(now())
+  updated_at    DateTime               @default(now())
+
+  @@map("networks")
+}
+
+// Junction table for many-to-many relationship between Currency and Network
+model NetworkOnCurrencies {
+  currency    Currency  @relation(fields: [currencyId], references: [id])
+  currencyId  Int
+  network     Network   @relation(fields: [networkId], references: [id])
+  networkId   Int
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now())
+
+  @@id([currencyId, networkId])
+  @@map("network_on_currencies")
+}
+
+model Wallet {
+  id          Int       @id @default(autoincrement())
+  currency    Currency  @relation(fields: [currencyId], references: [id])
+  currencyId  Int
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String?   @db.VarChar(64)
+  address     String?   @db.VarChar(255)
+  memo        String?   @db.VarChar(255)
+  spot_balance     Decimal   @default(0.00000000) @db.Decimal(32, 8)
+  trading_balance  Decimal   @default(0.00000000) @db.Decimal(32, 8)
+  funding_balance  Decimal   @default(0.00000000) @db.Decimal(32, 8)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([currencyId])
+  @@map("wallets")
 }
