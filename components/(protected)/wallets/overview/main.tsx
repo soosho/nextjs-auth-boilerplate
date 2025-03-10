@@ -1,35 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { useSession } from "next-auth/react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SpotWallet } from "./spot"
+import { type WalletsData } from "@/types/wallet"
 
-interface Wallet {
-  id: number
-  name: string | null
-  address: string | null
-  memo: string | null
-  currency: {
-    name: string
-    symbol: string
-    type: string
-    blockchain: {
-      name: string
-    } | null
-  }
+interface WalletOverviewMainProps {
+  initialData: WalletsData
 }
 
-export function WalletOverviewMain() {
-  const { data: session } = useSession()
+export function WalletOverviewMain({ initialData }: WalletOverviewMainProps) {
   const [activeTab, setActiveTab] = useState("spot")
+  const spotWallets = initialData.wallets.filter(w => w.spot_balance > 0)
+  const totalSpotBalance = spotWallets.reduce((sum, wallet) => 
+    sum + (wallet.spot_balance * wallet.currency.price), 0)
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Wallets</h2>
-      </div>
+      <h2 className="text-3xl font-bold tracking-tight">Wallets</h2>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
@@ -39,15 +27,12 @@ export function WalletOverviewMain() {
         </TabsList>
 
         <TabsContent value="spot" className="space-y-4">
-          <SpotWallet totalBalance={0} monthlyChange={0} wallets={[]} />
-        </TabsContent>
-
-        <TabsContent value="trading" className="space-y-4">
-          {/* Trading wallet content */}
-        </TabsContent>
-
-        <TabsContent value="funding" className="space-y-4">
-          {/* Funding wallet content */}
+          <SpotWallet 
+            totalBalance={totalSpotBalance} 
+            monthlyChange={0}
+            wallets={spotWallets}
+            currencies={initialData.currencies}
+          />
         </TabsContent>
       </Tabs>
     </div>
