@@ -24,12 +24,19 @@ import {
   User,
   X,
   Loader2,
+  Wallet,
+  ArrowDownToLine,
 } from "lucide-react"
 import { siteConfig } from "@/config/site"
 
 interface NavbarProps {
   toggleSidebar: () => void
   isSidebarOpen: boolean
+}
+
+interface WalletData {
+  totalBalance: number
+  walletLink: string
 }
 
 export function Navbar({ toggleSidebar, isSidebarOpen }: NavbarProps) {
@@ -41,6 +48,8 @@ export function Navbar({ toggleSidebar, isSidebarOpen }: NavbarProps) {
     avatar: string | null
   } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [walletData, setWalletData] = useState<WalletData | null>(null)
+  const [isWalletLoading, setIsWalletLoading] = useState(true)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -58,6 +67,31 @@ export function Navbar({ toggleSidebar, isSidebarOpen }: NavbarProps) {
     }
 
     fetchUserData()
+  }, [])
+
+  useEffect(() => {
+    const fetchWalletData = async () => {
+      setIsWalletLoading(true)
+      try {
+        const response = await fetch('/api/wallets/total-balance')
+        if (response.ok) {
+          const data = await response.json()
+          setWalletData(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch wallet data:', error)
+      } finally {
+        setIsWalletLoading(false)
+      }
+    }
+
+    // Initial fetch
+    fetchWalletData()
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchWalletData, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   // Get user initials for avatar fallback
@@ -108,6 +142,57 @@ export function Navbar({ toggleSidebar, isSidebarOpen }: NavbarProps) {
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary"></span>
           </Button>
           
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-9 gap-2">
+                <Wallet className="h-4 w-4" />
+                <span className="hidden sm:inline-block">
+                  {isWalletLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    `$${walletData?.totalBalance.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }) || '0.00'} USD`
+                  )}
+                </span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">Total Balance</p>
+                  <p className="text-xl font-bold">
+                    ${walletData?.totalBalance.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }) || '0.00'} USD
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link 
+                  href={walletData?.walletLink || "/wallets/overview"} 
+                  className="w-full flex items-center"
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  <span>View All Wallets</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link 
+                  href="/wallets/history/deposit" 
+                  className="w-full flex items-center"
+                >
+                  <ArrowDownToLine className="mr-2 h-4 w-4" />
+                  <span>Deposit History</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-9 gap-1 pl-1">

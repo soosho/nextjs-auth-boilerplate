@@ -1,5 +1,6 @@
 import Image from "next/image"
-import { Eye } from "lucide-react"
+import { Eye, ArrowDownToLine, ArrowUpFromLine } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { type Currency } from "@/types/wallet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -12,10 +13,9 @@ interface WalletListProps {
     trading_balance: number
     funding_balance: number
   }>
-  onViewDetails: (currencyId: number) => void
 }
 
-export function WalletList({ currencies, wallets, onViewDetails }: WalletListProps) {
+export function WalletList({ currencies, wallets }: WalletListProps) {
   return (
     <Table>
       <TableHeader>
@@ -24,7 +24,7 @@ export function WalletList({ currencies, wallets, onViewDetails }: WalletListPro
           <TableHead>Price</TableHead>
           <TableHead className="text-right">Balance</TableHead>
           <TableHead className="text-right">Value</TableHead>
-          <TableHead className="text-right">Action</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -67,15 +67,30 @@ export function WalletList({ currencies, wallets, onViewDetails }: WalletListPro
                 })}
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onViewDetails(currency.id)}
-                  className="h-8 w-8"
-                >
-                  <Eye className="h-4 w-4" />
-                  <span className="sr-only">View {currency.name} details</span>
-                </Button>
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    asChild
+                    className="h-8 w-8"
+                  >
+                    <Link href={`/wallets/${currency.symbol}/deposit`}>
+                      <ArrowDownToLine className="h-4 w-4" />
+                      <span className="sr-only">Deposit {currency.name}</span>
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    asChild
+                    className="h-8 w-8"
+                  >
+                    <Link href={`/wallets/${currency.symbol}/withdraw`}>
+                      <ArrowUpFromLine className="h-4 w-4" />
+                      <span className="sr-only">Withdraw {currency.name}</span>
+                    </Link>
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           )

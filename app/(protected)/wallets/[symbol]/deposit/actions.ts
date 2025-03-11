@@ -1,7 +1,7 @@
 'use server'
 
 import { auth } from "@/auth"
-import { blockchainDaemon } from "@/service/daemon/decord"
+import { daemonManager } from "@/service/daemon/manager"
 import { revalidatePath } from "next/cache"
 import { getCurrencyAndWallet } from "@/lib/wallets"
 
@@ -16,7 +16,12 @@ export async function generateAddress(symbol: string) {
     throw new Error('Currency not found')
   }
 
-  const wallet = await blockchainDaemon.generateDepositAddress(session.user.id)
+  const daemon = daemonManager.getDaemon(data.currency.blockchain?.name || '')
+  if (!daemon) {
+    throw new Error('No daemon implementation found for this currency')
+  }
+
+  const wallet = await daemon.generateDepositAddress(session.user.id)
   if (!wallet) {
     throw new Error('Failed to generate address')
   }

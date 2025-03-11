@@ -2,7 +2,6 @@ import { useState } from "react"
 import { type Wallet, type Currency } from "@/types/wallet"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { WalletList } from "./wallet-list"
-import { SpotModal } from "./spot-modal"
 
 interface SpotWalletProps {
   totalBalance: number
@@ -69,16 +68,9 @@ export function SpotWallet({
           <WalletList 
             currencies={currencies} 
             wallets={walletBalances} 
-            onViewDetails={handleViewDetails}
           />
         </CardContent>
       </Card>
-
-      <SpotModal 
-        currency={selectedCurrency}
-        isOpen={!!selectedCurrency}
-        onClose={handleCloseModal}
-      />
     </div>
   )
 }

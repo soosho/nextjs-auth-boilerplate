@@ -117,6 +117,7 @@ model Blockchain {
   updated_at           DateTime  @updatedAt
   networks             Network[]
   currencies           Currency[] // Add reverse relation
+  last_checked  DateTime @default(now())
 
   @@map("blockchains")
 }
@@ -161,8 +162,27 @@ model Wallet {
   funding_balance  Decimal   @default(0.00000000) @db.Decimal(32, 8)
   created_at  DateTime  @default(now())
   updated_at  DateTime  @default(now())
+  deposits    Deposit[]
 
   @@index([userId])
   @@index([currencyId])
   @@map("wallets")
+}
+
+model Deposit {
+  id            Int       @id @default(autoincrement())
+  wallet        Wallet    @relation(fields: [walletId], references: [id])
+  walletId      Int
+  txid          String    @db.VarChar(255)
+  amount        Decimal   @db.Decimal(32, 8)
+  confirmations Int       @default(0)
+  status        String    @default("pending") // pending, confirmed, rejected
+  credited      Boolean  @default(false)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@unique([txid])
+  @@index([walletId])
+  @@index([status])
+  @@map("deposits")
 }
