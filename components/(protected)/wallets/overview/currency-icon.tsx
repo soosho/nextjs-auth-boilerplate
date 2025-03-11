@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import { useState } from "react"
 
@@ -22,7 +24,7 @@ export function CurrencyIcon({ symbol, name }: CurrencyIconProps) {
   return (
     <div className="relative h-8 w-8">
       <Image
-        src={`/icons/coins/${symbol.toLowerCase()}.webp`}
+        src={`/icons/coins/${symbol}.webp`}
         alt={name}
         fill
         className="rounded-full object-contain"

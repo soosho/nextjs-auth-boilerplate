@@ -111,6 +111,7 @@ model Blockchain {
   port                 Int?
   username             String?   @db.VarChar(255)
   password             String?   @db.VarChar(255)
+  wallet_name          String?
   status               String    @default("active") @db.VarChar(255)
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
